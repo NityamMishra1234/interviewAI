@@ -61,9 +61,6 @@ const InterviewPage = () => {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
 
-  // --- (Your functions: endInterview, showDisqualificationMessage, setInterviewStatus, logViolation, speakText, startListening, handleAnswer, handleRetry, handleSubmit etc. remain the same) ---
-  // Make sure the browser APIs within them are inside useEffect or event handlers as they seem to be
-
 
     const endInterview = (reason: string): void => {
         // Check if running on client before using alert
@@ -102,34 +99,33 @@ const InterviewPage = () => {
     };
 
     useEffect(() => {
-        if (speakingLottieRef.current) {
-            isSpeaking
-                ? speakingLottieRef.current.play()
-                : speakingLottieRef.current.pause();
-        }
-        if (listeningLottieRef.current) {
-            isListening
-                ? listeningLottieRef.current.play()
-                : listeningLottieRef.current.pause();
-        }
-    }, [isSpeaking, isListening]);
+      if (speakingLottieRef.current) {
+          isSpeaking
+              ? speakingLottieRef.current.play()
+              : speakingLottieRef.current.pause();
+      }
+      if (listeningLottieRef.current) {
+          isListening
+              ? listeningLottieRef.current.play()
+              : listeningLottieRef.current.pause();
+      }
+  }, [isSpeaking, isListening]);
 
-    useEffect(() => {
-        if (!sessionId) return;
-        const fetchQuestions = async () => {
-            try {
-                const res = await axios.get(
-                    `/api/interview/${sessionId}`
-                );
-                // Ensure responses exist and is an array
-                setQuestions(res.data?.session?.responses || []);
-            } catch (error) {
-                console.error("Failed to fetch interview questions:", error);
-                setQuestions([]); // Set to empty array on error
-            }
-        };
-        fetchQuestions();
-    }, [sessionId]);
+  useEffect(() => {
+    if (!sessionId) return;
+    const fetchQuestions = async () => {
+        try {
+            const res = await axios.get(
+                `/api/interview/${sessionId}`
+            );
+            setQuestions(res.data?.session?.responses || []);
+        } catch (error) {
+            console.error("Failed to fetch interview questions:", error);
+            setQuestions([]);
+        }
+    };
+    fetchQuestions();
+}, [sessionId]);
 
     const speakText = (text: string, callback?: () => void) => {
         if (!text || typeof window === 'undefined' || !window.speechSynthesis) return; // Guard clause for server/missing API
@@ -220,16 +216,15 @@ const InterviewPage = () => {
              if (currentSpeech.endsWith('repeat') || currentSpeech.endsWith('again')) {
                  console.log("Repeat command detected.");
                  if (silenceTimeout) clearTimeout(silenceTimeout);
-                 recognition.stop(); // Stop current recognition
-                 // Re-speak the current question (ensure questions[currentIndex] exists)
+                 recognition.stop();
                  if (questions[currentIndex]?.question) {
-                    speakText(questions[currentIndex].question, () => startListening());
+                     speakText(questions[currentIndex].question, () => startListening());
                  }
-                 return; // Prevent further processing of this result
+                 return;
              }
-
-            resetSilenceTimer(); // Reset timer on any speech activity
-        };
+ 
+             resetSilenceTimer();
+         };
 
         recognition.onerror = (event: any) => {
             console.error("Speech recognition error:", event.error);
@@ -326,20 +321,7 @@ const InterviewPage = () => {
         };
     }, []);
 
-    // Webcam setup (keep if FaceMonitor needs manual stream handling, otherwise remove if FaceMonitor handles it internally)
-    // useEffect(() => {
-    //    if (typeof navigator !== 'undefined' && navigator.mediaDevices) {
-    //     navigator.mediaDevices
-    //         .getUserMedia({ video: { width: 320, height: 240, frameRate: 15 } })
-    //         .then((stream) => {
-    //              console.log("Webcam stream obtained.");
-    //             // if (videoRef.current) videoRef.current.srcObject = stream; // Assign if using a local video element
-    //              streamRef.current = stream; // Store stream reference
-    //         })
-    //         .catch((err) => console.error("Webcam access error:", err));
-    //    }
-    //     // Cleanup stream on unmount is handled in the main cleanup useEffect
-    // }, []);
+    
 
 
     useEffect(() => {
@@ -406,51 +388,54 @@ const InterviewPage = () => {
     };
 
     const handleSubmit = async () => {
-         console.log("Submitting interview...");
-         setIsSubmitting(true);
-         // Cancel any ongoing speech/recognition
-         if (typeof window !== 'undefined' && window.speechSynthesis) window.speechSynthesis.cancel();
-         if (recognitionRef.current) recognitionRef.current.abort();
-
-        try {
-             // Ensure all necessary data is present
-             const submissionData = {
-                sessionId,
-                candidate: { name, email, phone, topic, experienceLevel },
-                answers, // Ensure answers state is up-to-date
-             };
-             console.log("Submission Data:", submissionData);
-
-            const res = await axios.post("/api/interview/submit", submissionData);
-            console.log("Submission response:", res.data);
-
-
-            if (res.data.success) {
-                dispatch(setEvaluationData({
-                    totalScore: res.data.totalScore,
-                    feedback: res.data.feedback,
-                }));
-                 // Speak success message before navigating
-                 speakText("Your interview has been submitted successfully. Redirecting to evaluation.", () => {
-                     router.push("/mock/evaluation");
-                 });
-
-            } else {
-                console.error("Interview submission failed:", res.data.message);
-                 speakText("There was an error submitting your interview. Please try again later.", () => {
-                     setIsSubmitting(false); // Re-enable button on failure
-                 });
-                 // Removed alert("Interview submission failed."); - rely on spoken feedback
-            }
-        } catch (error) {
-             console.error("Submission failed:", error);
-             speakText("An unexpected error occurred during submission. Please try again later.", () => {
-                 setIsSubmitting(false); // Re-enable button on error
-             });
-             // Removed alert("Something went wrong!"); - rely on spoken feedback
-        }
-        // Removed finally block - handled within try/catch logic
-    };
+      
+      setIsSubmitting(true);
+      
+      
+      if (typeof window !== 'undefined' && window.speechSynthesis) window.speechSynthesis.cancel();
+      if (recognitionRef.current) recognitionRef.current.abort();
+  
+      try {
+          // Ensure all necessary data is present
+          const submissionData = {
+              sessionId,
+              candidate: { name, email, phone, topic, experienceLevel },
+              answers, // Ensure answers state is up-to-date
+          };
+          console.log("Submission Data:", submissionData);
+  
+          const res = await axios.post("/api/interview/submit", submissionData);
+          console.log("Submission response:", res.data);
+  
+          if (res.data.success) {
+              // Dispatch the evaluation data to Redux store
+              dispatch(setEvaluationData({
+                  totalScore: res.data.totalScore,
+                  feedback: res.data.feedback,
+              }));
+              
+              // Speak success message before navigating
+              speakText("Your interview has been submitted successfully. Redirecting to evaluation.", () => {
+                  router.push("/mock/evaluation");
+              });
+          } else {
+              console.error("Interview submission failed:", res.data.message);
+              
+              // Speak failure message
+              speakText("There was an error submitting your interview. Please try again later.", () => {
+                  setIsSubmitting(false); // Re-enable button on failure
+              });
+          }
+      } catch (error) {
+          console.error("Submission failed:", error);
+          
+          // Speak error message
+          speakText("An unexpected error occurred during submission. Please try again later.", () => {
+              setIsSubmitting(false); // Re-enable button on error
+          });
+      }
+  };
+  
 
     // Ensure currentQuestion is accessed safely
     const currentQuestionText = questions.length > currentIndex ? questions[currentIndex]?.question : "Loading question...";
