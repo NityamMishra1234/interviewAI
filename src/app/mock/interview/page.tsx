@@ -3,11 +3,10 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useSelector } from "react-redux";
 import axios from "axios";
-import { LottieRefCurrentProps } from "lottie-react";
-import dynamic from "next/dynamic";
+import Lottie, { LottieRefCurrentProps } from "lottie-react";
 import speakingAnimation from "../../../accets/speaking men.json";
 import listeningAnimation from "../../../accets/listening.json";
-
+import FaceMonitor from '@/components/FaceMonitor';
 import { setEvaluationData } from '@/store/slice/evaluationSlice';
 import { useRouter } from 'next/navigation';
 import { useDispatch } from "react-redux";
@@ -15,8 +14,6 @@ import { AiOutlineLoading3Quarters } from 'react-icons/ai';
 import { RootState } from "@/store";
 
 
-const Lottie = dynamic(() => import("lottie-react"), { ssr: false });
-const FaceMonitor = dynamic(() => import("@/components/FaceMonitor"), { ssr: false });
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 /* eslint-disable react-hooks/exhaustive-deps */
@@ -57,16 +54,22 @@ const dispatch = useDispatch();
     retryCount?: number;
   };
 
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-      // User switched tab or minimized the window
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const handleVisibilityChange = () => {
+        if (document.hidden) {
+          alert('You have switched tabs! The interview has been disqualified.');
+          endInterview('Tab switch detected');
+        }
+      };
+  
+      document.addEventListener('visibilitychange', handleVisibilityChange);
       
-      alert('You have switched tabs! The interview has been disqualified.');
-      endInterview('Tab switch detected');
-    } else {
-      
+      return () => {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      };
     }
-  });
+  }, []);
 
   // End the interview
   function endInterview(reason: string): void {
