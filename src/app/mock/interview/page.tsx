@@ -3,10 +3,11 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useSelector } from "react-redux";
 import axios from "axios";
-import Lottie, { LottieRefCurrentProps } from "lottie-react";
+import { LottieRefCurrentProps } from "lottie-react";
+import dynamic from "next/dynamic";
 import speakingAnimation from "../../../accets/speaking men.json";
 import listeningAnimation from "../../../accets/listening.json";
-import FaceMonitor from '@/components/FaceMonitor';
+
 import { setEvaluationData } from '@/store/slice/evaluationSlice';
 import { useRouter } from 'next/navigation';
 import { useDispatch } from "react-redux";
@@ -14,6 +15,8 @@ import { AiOutlineLoading3Quarters } from 'react-icons/ai';
 import { RootState } from "@/store";
 
 
+const Lottie = dynamic(() => import("lottie-react"), { ssr: false });
+const FaceMonitor = dynamic(() => import("@/components/FaceMonitor"), { ssr: false });
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 /* eslint-disable react-hooks/exhaustive-deps */
