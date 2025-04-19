@@ -1,12 +1,13 @@
-'use client';
+'use client'; // Mark this component as a client component
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react'; // Import Suspense
 import { useSearchParams, useRouter } from 'next/navigation';
 import { SubmitButton, AuthFormWrapper } from '@/components/ui/AuthButton';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import Navbar from '@/components/Navigation/navbar';
-export default function VerifyPage() {
+
+function VerifyForm() { // Extract the form into a separate client component
   const [otp, setOtp] = useState('');
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
@@ -14,14 +15,14 @@ export default function VerifyPage() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    const emailParam = searchParams.get('email');
+    const emailParam = searchParams?.get('email'); // Optional chaining
     if (emailParam) {
       console.log("✅ Email from URL:", emailParam);
       setEmail(emailParam);
     } else {
       console.warn("❌ Email param missing in URL");
     }
-  }, [searchParams])
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,29 +50,36 @@ export default function VerifyPage() {
   };
 
   return (
-    <>
-    <Navbar/>
-    <div className="min-h-screen bg-gradient-to-br  from-fuchsia-900 via-zinc-900 to-black  flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-6">
-          <h1 className="text-white text-3xl font-bold">InterviewAI</h1>
-        </div>
+    <AuthFormWrapper title="Verify Your Email" subtitle="Enter the OTP sent to your inbox">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <Input
+          name="otp"
+          placeholder="Enter 6-digit OTP"
+          value={otp}
+          onChange={(e) => setOtp(e.target.value)}
+          maxLength={6}
+          className="text-center tracking-widest text-lg font-mono"
+        />
+        <SubmitButton loading={loading} label="Verify" />
+      </form>
+    </AuthFormWrapper>
+  );
+}
 
-        <AuthFormWrapper title="Verify Your Email" subtitle="Enter the OTP sent to your inbox">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
-              name="otp"
-              placeholder="Enter 6-digit OTP"
-              value={otp}
-              onChange={(e) => setOtp(e.target.value)}
-              maxLength={6}
-              className="text-center tracking-widest text-lg font-mono"
-            />
-            <SubmitButton loading={loading} label="Verify" />
-          </form>
-        </AuthFormWrapper>
+export default function VerifyPage() {
+  return (
+    <>
+      <Navbar />
+      <div className="min-h-screen bg-gradient-to-br from-fuchsia-900 via-zinc-900 to-black flex items-center justify-center px-4">
+        <div className="w-full max-w-md">
+          <div className="text-center mb-6">
+            <h1 className="text-white text-3xl font-bold">InterviewAI</h1>
+          </div>
+          <Suspense fallback={<div>Loading...</div>}>
+            <VerifyForm />
+          </Suspense>
+        </div>
       </div>
-    </div>
     </>
   );
 }

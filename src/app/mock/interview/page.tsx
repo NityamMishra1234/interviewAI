@@ -1,18 +1,16 @@
-"use client";
+'use client';
 
 import React, { useEffect, useState, useRef } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import axios from "axios";
 import Lottie, { LottieRefCurrentProps } from "lottie-react";
 import speakingAnimation from "../../../accets/speaking men.json";
 import listeningAnimation from "../../../accets/listening.json";
-import FaceMonitor from '@/components/FaceMonitor';
+import dynamic from 'next/dynamic';
 import { setEvaluationData } from '@/store/slice/evaluationSlice';
 import { useRouter } from 'next/navigation';
-import { useDispatch } from "react-redux";
 import { AiOutlineLoading3Quarters } from 'react-icons/ai';
 import { RootState } from "@/store";
-
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-expressions */
@@ -20,33 +18,36 @@ import { RootState } from "@/store";
 /* eslint-disable @typescript-eslint/no-unused-vars */
 type SpeechRecognition =
   typeof window.SpeechRecognition | typeof window.webkitSpeechRecognition;
+
+// Dynamically import FaceMonitor with SSR disabled
+const FaceMonitor = dynamic(() => import('@/components/FaceMonitor'), {
+  ssr: false,
+  loading: () => <p>Loading webcam...</p>, // Optional loading indicator
+});
+
 const InterviewPage = () => {
-  
   const interviewSession = useSelector((state: RootState) => state.interviewSession);
   const { name, email, phone, topic, experienceLevel, sessionId } =
     interviewSession;
- 
+
   const speakingLottieRef = useRef<LottieRefCurrentProps | null>(null);
   const listeningLottieRef = useRef<LottieRefCurrentProps>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const router = useRouter();
-const dispatch = useDispatch();
-  // This line can be updated directly to faceapi variable without useState
- 
+  const dispatch = useDispatch();
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const MAX_RETRIES = 2;
 
   const [questions, setQuestions] = useState<QuestionAnswerPair[]>([]);
-
   const [currentIndex, setCurrentIndex] = useState(0);
-  // const [answer, setAnswer] = useState<string>("");
   const [answers, setAnswers] = useState<QuestionAnswerPair[]>([]);
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
- 
+
   type QuestionAnswerPair = {
     question: string;
     answer: string;
@@ -54,30 +55,17 @@ const dispatch = useDispatch();
     retryCount?: number;
   };
 
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-      // User switched tab or minimized the window
-      
-      alert('You have switched tabs! The interview has been disqualified.');
-      endInterview('Tab switch detected');
-    } else {
-      
-    }
-  });
-
-  // End the interview
-  function endInterview(reason: string): void {
+  const endInterview = (reason: string): void => {
     setInterviewStatus('disqualified', reason);
     showDisqualificationMessage(reason);
     logViolation('Tab switch detected during interview');
-  }
+  };
 
-  function showDisqualificationMessage(reason: string): void {
+  const showDisqualificationMessage = (reason: string): void => {
     alert(`Interview ended: ${reason}. You have been disqualified.`);
-  }
+  };
 
-  function setInterviewStatus(status: string, reason: string): void {
-    // Send status and reason to the server to update the interview
+  const setInterviewStatus = (status: string, reason: string): void => {
     axios.post('/api/interviews/updateStatus', {
       status,
       reason,
@@ -85,20 +73,18 @@ const dispatch = useDispatch();
     }).catch((error) => {
       console.error("Failed to update interview status:", error);
     });
-  }
+  };
 
-  function logViolation(reason: string): void {
+  const logViolation = (reason: string): void => {
     console.log(`Violation logged: ${reason}`);
-    // Log violation on the server for audit purposes
     axios.post('/api/interviews/logViolation', {
       sessionId,
       reason,
     }).catch((error) => {
       console.error("Failed to log violation:", error);
     });
-  }
+  };
 
-  // Sync animation states
   useEffect(() => {
     if (speakingLottieRef.current) {
       isSpeaking
@@ -112,13 +98,12 @@ const dispatch = useDispatch();
     }
   }, [isSpeaking, isListening]);
 
-  // Fetch interview questions
   useEffect(() => {
     if (!sessionId) return;
     const fetchQuestions = async () => {
       try {
         const res = await axios.get(
-          `http://localhost:3000/api/interview/${sessionId}`
+          `/api/interview/${sessionId}`
         );
         setQuestions(res.data.session.responses);
       } catch (error) {
@@ -128,7 +113,6 @@ const dispatch = useDispatch();
     fetchQuestions();
   }, [sessionId]);
 
- 
   const speakText = (text: string, callback?: () => void) => {
     if (!text) return;
 
@@ -149,23 +133,6 @@ const dispatch = useDispatch();
     setIsSpeaking(true);
     speechSynthesis.speak(utterance);
   };
-  
-  useEffect(() => {
-    if (
-      questions.length &&
-      currentIndex < questions.length &&
-      !isSpeaking &&
-      !isListening
-    ) {
-      const currentQuestion = questions[currentIndex];
-      speakText(currentQuestion?.question, () => {
-        startListening();
-      });
-    }
-    console.log("Current question:", questions[currentIndex]?.question);
-  }, [questions, currentIndex]);
-
-  // Start voice recognition
   const startListening = () => {
     const SpeechRecognition =
       (window as any).SpeechRecognition ||
@@ -205,7 +172,6 @@ const dispatch = useDispatch();
       }
 
       const fullText = finalTranscript + interimTranscript;
-      // setAnswer(fullText);
       resetSilenceTimer();
 
       if (/repeat|again/i.test(fullText)) {
@@ -252,7 +218,23 @@ const dispatch = useDispatch();
     resetSilenceTimer();
   };
 
-  // Cleanup
+  useEffect(() => {
+    if (
+      questions.length &&
+      currentIndex < questions.length &&
+      !isSpeaking &&
+      !isListening
+    ) {
+      const currentQuestion = questions[currentIndex];
+      speakText(currentQuestion?.question, () => {
+        startListening();
+      });
+    }
+    console.log("Current question:", questions[currentIndex]?.question);
+  }, [questions, currentIndex, isSpeaking, isListening, speakText, startListening]);
+
+ 
+
   useEffect(() => {
     return () => {
       recognitionRef.current?.abort();
@@ -261,7 +243,6 @@ const dispatch = useDispatch();
     };
   }, []);
 
-  // Webcam stream
   useEffect(() => {
     navigator.mediaDevices
       .getUserMedia({ video: { width: 320, height: 240, frameRate: 15 } })
@@ -272,17 +253,30 @@ const dispatch = useDispatch();
       .catch((err) => console.error("Webcam access error:", err));
   }, []);
 
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        alert('You have switched tabs! The interview has been disqualified.');
+        endInterview('Tab switch detected');
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [endInterview, logViolation, setInterviewStatus]);
+
   const handleAnswer = (response: string) => {
     const question = questions[currentIndex];
     setAnswers((prev) => [...prev, { question: question.question, answer: response }]);
-    // setAnswer("");
     if (currentIndex < questions.length - 1) {
       setCurrentIndex(currentIndex + 1);
     }
   };
 
   const handleRetry = () => {
-    // setAnswer("");
     startListening();
   };
 
@@ -295,19 +289,18 @@ const dispatch = useDispatch();
         answers,
       });
       console.log("➡️ Sending to backend:", {
-       
         questions,
         answers,
       });
-  
+
       if (res.data.success) {
         alert("Interview submitted successfully!");
-  
+
         dispatch(setEvaluationData({
           totalScore: res.data.totalScore,
           feedback: res.data.feedback,
         }));
-  
+
         router.push("/mock/evaluation");
       } else {
         alert("Interview submission failed.");
@@ -319,7 +312,6 @@ const dispatch = useDispatch();
       setIsSubmitting(false);
     }
   };
-  
 
   const currentQuestion = questions[currentIndex];
 
@@ -351,23 +343,23 @@ const dispatch = useDispatch();
               </button>
 
               {currentIndex === questions.length - 1 && (
-  <button
-    onClick={handleSubmit}
-    disabled={isSubmitting}
-    className={`px-4 py-2 flex items-center justify-center gap-2 rounded-xl text-white transition ${
-      isSubmitting ? 'bg-gray-500 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'
-    }`}
-  >
-    {isSubmitting ? (
-      <>
-        <AiOutlineLoading3Quarters className="animate-spin" />
-        Submitting...
-      </>
-    ) : (
-      'Submit'
-    )}
-  </button>
-)}
+                <button
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
+                  className={`px-4 py-2 flex items-center justify-center gap-2 rounded-xl text-white transition ${
+                    isSubmitting ? 'bg-gray-500 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'
+                  }`}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <AiOutlineLoading3Quarters className="animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    'Submit'
+                  )}
+                </button>
+              )}
             </div>
 
             <div className="h-80 bg-gray-200 rounded-lg flex items-center justify-center gap-2">
@@ -384,10 +376,9 @@ const dispatch = useDispatch();
 
       {/* RIGHT PANEL */}
       <div className="w-5/12">
-
-      <div className="bg-white shadow-lg rounded-2xl p-4 flex justify-center items-center h-96">
-    <FaceMonitor/>
-  </div>
+        <div className="bg-white shadow-lg rounded-2xl p-4 flex justify-center items-center h-96">
+          <FaceMonitor /> {/* FaceMonitor is now dynamically imported */}
+        </div>
         <div className="bg-white shadow-lg rounded-2xl p-6">
           <h3 className="text-lg font-semibold text-gray-700 mb-4">Candidate Info</h3>
           <p>Name: {name}</p>
