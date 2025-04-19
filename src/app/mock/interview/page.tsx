@@ -68,7 +68,7 @@ const dispatch = useDispatch();
       return () => {
         document.removeEventListener('visibilitychange', handleVisibilityChange);
       };
-    }
+    }//hello there this change dont get on the git hub right now so what should i do ??
   }, []);
 
   // End the interview
