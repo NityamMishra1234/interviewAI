@@ -10,7 +10,7 @@ import {
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navigation/navbar';
 import Footer from '@/components/footer/Footer';
-const topics = ['React', 'Node.js', 'Communication Skills', 'Marketing','python' ,'java','javaScript' , 'MBA' , 'UPSC' , 'AI' ,'ML' , 'BPO' ];
+const topics = ['React', 'Node.js', 'Communication Skills', 'Marketing','python' ,'java','javaScript' , 'MBA' , 'UPSC' , 'AI' ,'ML' , 'BPO','Digigtal Marketing' ];
 const levels = ['beginner', 'intermediate', 'advanced'];
 
 export default function StartInterviewPage() {
