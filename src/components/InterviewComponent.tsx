@@ -352,12 +352,12 @@ const dispatch = useDispatch();
 
           <div className="mt-4 flex flex-col gap-3">
             <div className="flex gap-3">
-              <button
+{/*               <button
                 onClick={handleRetry}
                 className="px-4 py-2 bg-yellow-500 text-white rounded-xl hover:bg-yellow-600"
               >
                 Retry
-              </button>
+              </button> */}
 
               {currentIndex === questions.length - 1 && (
   <button
